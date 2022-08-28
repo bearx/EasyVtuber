@@ -4,6 +4,7 @@ character
 src
 dst
 .idea
+bin
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -135,3 +136,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /launcher.json
+
+
+data/
+!data/images/lambda*
+!data/images/README.md
+!data/models/placeholder.txt
+*.iml
+.idea/
+*.pt

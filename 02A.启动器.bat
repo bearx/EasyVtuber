@@ -1,3 +1,2 @@
 @echo off
-call venv\Scripts\activate.bat
-start pythonw launcher.py
+bin\pythonw.exe launcher.py

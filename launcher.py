@@ -1,21 +1,24 @@
 import os
-import signal
 import subprocess
-import sys
 import tkinter as tk
+import tkinter.messagebox
 from tkinter import ttk
 import json
+import sys
 
 default_arg={
-        'character': 'y',
+        'character': 'lambda_00',
         'input': 2,
         'output': 2,
         'ifm': None,
         'is_extend_movement': False,
         'is_anime4k': False,
         'is_alpha_split': False,
+        'is_bongo': False,
+        'is_eyebrow': False,
         'cache_simplify': 1,
         'cache_size': 1,
+        'model_type': 0,
     }
 
 try:
@@ -29,9 +32,9 @@ finally:
     args = default_arg
 
 p = None
-
+dirPath='data/images'
 characterList = []
-for item in sorted(os.listdir('character'), key=lambda x: -os.path.getmtime(os.path.join('character', x))):
+for item in sorted(os.listdir(dirPath), key=lambda x: -os.path.getmtime(os.path.join(dirPath, x))):
     if '.png' == item[-4:]:
         characterList.append(item[:-4])
 
@@ -40,60 +43,8 @@ root.resizable(False, False)
 root.title('EasyVtuber Launcher')
 
 launcher = ttk.Frame(root)
-launcher.pack(padx=10, pady=10, fill='x', expand=True)
+launcher.pack(fill='x', expand=True)
 
-character = tk.StringVar(value=args['character'])
-ttk.Label(launcher, text="Character").pack(fill='x', expand=True)
-
-# ttk.Entry(launcher, textvariable=character).pack(fill='x', expand=True)
-char_combo = ttk.Combobox(launcher, textvariable=character, value=characterList)
-char_combo.pack(fill='x', expand=True)
-
-input = tk.IntVar(value=args['input'])
-ttk.Label(launcher, text="Face Data Source").pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='iFacialMocap', value=0, variable=input).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Webcam', value=1, variable=input).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Initial Debug Input', value=2, variable=input).pack(fill='x', expand=True)
-
-ttk.Label(launcher, text="iFacialMocap IP:Port").pack(fill='x', expand=True)
-
-ifm = tk.StringVar(value=args['ifm'])
-ttk.Entry(launcher, textvariable=ifm, state=False).pack(fill='x', expand=True)
-
-ttk.Label(launcher, text="Facial Input Simplify").pack(fill='x', expand=True)
-cache_simplify = tk.IntVar(value=args['cache_simplify'])
-ttk.Radiobutton(launcher, text='Off', value=0, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Low', value=1, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Medium', value=2, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='High', value=3, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Higher', value=4, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Highest', value=6, variable=cache_simplify).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Gaming', value=8, variable=cache_simplify).pack(fill='x', expand=True)
-
-ttk.Label(launcher, text="Cache Size (RAM+VRAM)").pack(fill='x', expand=True)
-cache_size = tk.IntVar(value=args['cache_size'])
-ttk.Radiobutton(launcher, text='Off', value=0, variable=cache_size).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='256M+128M', value=1, variable=cache_size).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='1GB+512M', value=2, variable=cache_size).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='2GB+1GB', value=3, variable=cache_size).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='4GB+2GB', value=4, variable=cache_size).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='8GB+4GB', value=5, variable=cache_size).pack(fill='x', expand=True)
-
-ttk.Label(launcher, text="Extra Options").pack(fill='x', expand=True)
-is_extend_movement = tk.BooleanVar(value=args['is_extend_movement'])
-ttk.Checkbutton(launcher, text='Extend Movement', variable=is_extend_movement).pack(fill='x', expand=True)
-
-is_anime4k = tk.BooleanVar(value=args['is_anime4k'])
-ttk.Checkbutton(launcher, text='Anime4K', variable=is_anime4k).pack(fill='x', expand=True)
-
-is_alpha_split = tk.BooleanVar(value=args['is_alpha_split'])
-ttk.Checkbutton(launcher, text='Alpha Split', variable=is_alpha_split).pack(fill='x', expand=True)
-
-output = tk.IntVar(value=args['output'])
-ttk.Label(launcher, text="Output").pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Unity Capture', value=0, variable=output).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='OBS Virtual Camera', value=1, variable=output).pack(fill='x', expand=True)
-ttk.Radiobutton(launcher, text='Initial Debug Output', value=2, variable=output).pack(fill='x', expand=True)
 
 
 def launch():
@@ -107,9 +58,18 @@ def launch():
         'is_extend_movement': is_extend_movement.get(),
         'is_anime4k': is_anime4k.get(),
         'is_alpha_split': is_alpha_split.get(),
+        'is_bongo': is_bongo.get(),
+        'is_eyebrow': is_eyebrow.get(),
         'cache_simplify': cache_simplify.get(),
         'cache_size': cache_size.get(),
+        'model_type': model_type.get(),
     }
+
+    if args['input'] == 0:
+        if len(args['ifm'])==0:
+            tkinter.messagebox.showinfo('EasyVtuber Launcher','Please Input iFacialMocap IP:Port')
+            return
+
     f = open('launcher.json', mode='w')
     json.dump(args, f)
     f.close()
@@ -119,7 +79,7 @@ def launch():
         p = None
         launch_btn.config(text="Save & Launch")
     else:
-        run_args = [os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe'), 'main.py']
+        run_args = [sys.executable, 'main.py']
         if len(args['character']):
             run_args.append('--character')
             run_args.append(args['character'])
@@ -133,6 +93,9 @@ def launch():
             run_args.append('cam')
         elif args['input'] == 2:
             run_args.append('--debug_input')
+        elif args['input'] == 3:
+            run_args.append('--mouse_input')
+            run_args.append('0,0,'+str(root.winfo_screenwidth())+','+str(root.winfo_screenheight()))
 
         if args['output'] == 0:
             run_args.append('--output_webcam')
@@ -149,6 +112,10 @@ def launch():
         if args['is_extend_movement']:
             run_args.append('--extend_movement')
             run_args.append('1')
+        if args['is_bongo']:
+            run_args.append('--bongo')
+        if args['is_eyebrow']:
+            run_args.append('--eyebrow')
         if args['cache_simplify'] is not None:
             run_args.append('--simplify')
             run_args.append(str(args['cache_simplify']))
@@ -157,15 +124,95 @@ def launch():
             run_args.append(['0b','256mb','1gb','2gb','4gb','8gb'][args['cache_size']])
             run_args.append('--gpu_cache')
             run_args.append(['0b','128mb','512mb','1gb','2gb','4gb'][args['cache_size']])
+        if args['model_type'] is not None:
+            run_args.append('--model')
+            model_name=['standard_float','standard_half','separable_half'][args['model_type']]
+            run_args.append(model_name)
+            if not os.path.exists('data/models/'+model_name+'/face_morpher.pt'):
+                tkinter.messagebox.showinfo('EasyVtuber Launcher', 'Missing Model File: '+'data/models/'+model_name+'\nCheck link 00B or README.md for more info.')
+                return
+
         run_args.append('--output_size')
         run_args.append('512x512')
-        print(run_args)
+        print('Launched: '+' '.join(run_args))
         p = subprocess.Popen(run_args)
         launch_btn.config(text='Stop')
 
 
 launch_btn = ttk.Button(launcher, text="Save & Launch", command=launch)
-launch_btn.pack(fill='x', expand=True, pady=10)
+launch_btn.pack(side='bottom',fill='x', expand=True, pady=10,padx=10)
+
+
+frameL = ttk.Frame(launcher)
+frameL.pack(padx=10, pady=10, fill='both',side='left', expand=True)
+frameR = ttk.Frame(launcher)
+frameR.pack(padx=10, pady=10, fill='both',side='left', expand=True)
+
+character = tk.StringVar(value=args['character'])
+ttk.Label(frameL, text="Character").pack(fill='x', expand=True)
+
+# ttk.Entry(frameL, textvariable=character).pack(fill='x', expand=True)
+char_combo = ttk.Combobox(frameL, textvariable=character, value=characterList)
+char_combo.pack(fill='x', expand=True)
+
+input = tk.IntVar(value=args['input'])
+ttk.Label(frameL, text="Face Data Source").pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='iFacialMocap', value=0, variable=input).pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='Webcam', value=1, variable=input).pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='Mouse Input', value=3, variable=input).pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='Initial Debug Input', value=2, variable=input).pack(fill='x', expand=True)
+
+ttk.Label(frameL, text="iFacialMocap IP:Port").pack(fill='x', expand=True)
+
+ifm = tk.StringVar(value=args['ifm'])
+ttk.Entry(frameL, textvariable=ifm, state=False).pack(fill='x', expand=True)
+
+ttk.Label(frameR, text="Model Simplify").pack(fill='x', expand=True)
+model_type = tk.IntVar(value=args['model_type'])
+ttk.Radiobutton(frameR, text='Off', value=0, variable=model_type).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Low', value=1, variable=model_type).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='High', value=2, variable=model_type).pack(fill='x', expand=True)
+
+ttk.Label(frameR, text="Facial Input Simplify").pack(fill='x', expand=True)
+cache_simplify = tk.IntVar(value=args['cache_simplify'])
+ttk.Radiobutton(frameR, text='Off', value=0, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Low', value=1, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Medium', value=2, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='High', value=3, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Higher', value=4, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Highest', value=6, variable=cache_simplify).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='Gaming', value=8, variable=cache_simplify).pack(fill='x', expand=True)
+
+ttk.Label(frameR, text="Cache Size (RAM+VRAM)").pack(fill='x', expand=True)
+cache_size = tk.IntVar(value=args['cache_size'])
+ttk.Radiobutton(frameR, text='Off', value=0, variable=cache_size).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='256M+128M', value=1, variable=cache_size).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='1GB+512M', value=2, variable=cache_size).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='2GB+1GB', value=3, variable=cache_size).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='4GB+2GB', value=4, variable=cache_size).pack(fill='x', expand=True)
+ttk.Radiobutton(frameR, text='8GB+4GB', value=5, variable=cache_size).pack(fill='x', expand=True)
+
+ttk.Label(frameL, text="Extra Options").pack(fill='x', expand=True)
+is_eyebrow = tk.BooleanVar(value=args['is_eyebrow'])
+ttk.Checkbutton(frameL, text='Eyebrow (iFM Only)', variable=is_eyebrow).pack(fill='x', expand=True)
+
+is_extend_movement = tk.BooleanVar(value=args['is_extend_movement'])
+ttk.Checkbutton(frameL, text='Extend Movement', variable=is_extend_movement).pack(fill='x', expand=True)
+
+is_anime4k = tk.BooleanVar(value=args['is_anime4k'])
+ttk.Checkbutton(frameL, text='Anime4K', variable=is_anime4k).pack(fill='x', expand=True)
+
+is_alpha_split = tk.BooleanVar(value=args['is_alpha_split'])
+ttk.Checkbutton(frameL, text='Alpha Split', variable=is_alpha_split).pack(fill='x', expand=True)
+
+is_bongo = tk.BooleanVar(value=args['is_bongo'])
+ttk.Checkbutton(frameL, text='Bongocat Mode', variable=is_bongo).pack(fill='x', expand=True)
+
+output = tk.IntVar(value=args['output'])
+ttk.Label(frameL, text="Output").pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='Unity Capture', value=0, variable=output).pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='OBS Virtual Camera', value=1, variable=output).pack(fill='x', expand=True)
+ttk.Radiobutton(frameL, text='Initial Debug Output', value=2, variable=output).pack(fill='x', expand=True)
 
 
 def closeWindow():
@@ -178,7 +225,7 @@ def closeWindow():
 def handle_focus(event):
     characterList = []
     if event.widget == root:
-        for item in sorted(os.listdir('character'), key=lambda x: -os.path.getmtime(os.path.join('character', x))):
+        for item in sorted(os.listdir(dirPath), key=lambda x: -os.path.getmtime(os.path.join(dirPath, x))):
             if '.png' == item[-4:]:
                 characterList.append(item[:-4])
         char_combo.config(value=characterList)

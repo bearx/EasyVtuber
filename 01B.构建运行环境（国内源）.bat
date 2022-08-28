@@ -1,6 +1,5 @@
-python --version
-python -m venv venv
-call venv\Scripts\activate.bat
-pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
+@echo off
+cd bin
+python.exe -m pip install -r ..\requirements.txt -i https://mirror.sjtu.edu.cn/pypi/web/simple --no-warn-script-location
+python.exe -m pip install torch --extra-index-url https://mirror.sjtu.edu.cn/pytorch-wheels/cu113 --no-warn-script-location
 pause
